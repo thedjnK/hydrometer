@@ -9,9 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(application, 4);
-
-#define AVERAGE_READING_COUNT 3
+LOG_MODULE_REGISTER(app, CONFIG_APPLICATION_LOG_LEVEL);
 
 static int sensor_reading(const struct device *dev, double *temperature, double *acceleration, double *gyroscope)
 {
@@ -31,7 +29,7 @@ static int sensor_reading(const struct device *dev, double *temperature, double 
 
 	i = 0;
 
-	while (i < AVERAGE_READING_COUNT) {
+	while (i < CONFIG_APP_READINGS) {
 		rc = sensor_sample_fetch(dev);
 
 		if (rc) {
@@ -75,14 +73,16 @@ static int sensor_reading(const struct device *dev, double *temperature, double 
 		++i;
 	}
 
+#if CONFIG_APP_READINGS > 0
 	i = 0;
 
 	while (i < 3) {
-		acceleration[i] /= AVERAGE_READING_COUNT;
-		gyroscope[i] /= AVERAGE_READING_COUNT;
+		acceleration[i] /= CONFIG_APP_READINGS;
+		gyroscope[i] /= CONFIG_APP_READINGS;
 
 		++i;
 	}
+#endif
 
 	return 0;
 }

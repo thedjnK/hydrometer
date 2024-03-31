@@ -1,0 +1,18 @@
+# Copyright 2024 Jamie M.
+
+menu "Application settings"
+
+module = APPLICATION
+module-str = application
+source "subsys/logging/Kconfig.template.log_config"
+
+config APP_READINGS
+	int "Readings"
+	range 1 8
+	default 3
+	help
+	  Number of readings to average (1 being no averaging)
+
+endmenu
+
+source "Kconfig.zephyr"
