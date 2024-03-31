@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include "filter.h"
 
 LOG_MODULE_REGISTER(app, CONFIG_APPLICATION_LOG_LEVEL);
 
@@ -101,6 +102,8 @@ int main(void)
 		double temperature;
 		double acceleration[3];
 		double gyroscope[3];
+		double roll;
+		double pitch;
 		int rc;
 
 		rc = sensor_reading(mpu6500, &temperature, acceleration, gyroscope);
@@ -109,11 +112,11 @@ int main(void)
 			break;
 		}
 
-		LOG_INF("%gc, accel %f %f %f m/s/s, gyro %f %f %f rad/s", temperature,
-			acceleration[0], acceleration[1], acceleration[2], gyroscope[0],
-			gyroscope[1], gyroscope[2]);
+		calculate_angle(acceleration, gyroscope, true, &roll, &pitch);
+		LOG_ERR("Got: %f, %f", roll, pitch);
 
-		k_sleep(K_SECONDS(1));
+//		k_sleep(K_SECONDS(1));
+		k_sleep(K_MSEC(50));
 	}
 
 	return 0;
