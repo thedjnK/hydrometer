@@ -34,6 +34,13 @@ static const struct bt_uuid_128 hydrometer_reading_char_uuid = BT_UUID_INIT_128(
         0x65, 0x65, 0x43, 0x2a, 0xaf, 0xc0, 0x48, 0x12,
 	0xbb, 0x2a, 0x22, 0x53, 0x2a, 0x48, 0xb0, 0x02);
 
+static ssize_t write_hyrdrometer_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					 const void *buf, uint16_t len, uint16_t offset,
+					 uint8_t flags)
+{
+	return 0;
+}
+
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -83,34 +90,28 @@ static void update_temperature(struct bt_conn *conn,
 			       const struct bt_gatt_attr *chrc, int16_t value,
 			       struct temperature_sensor *sensor)
 {
-/*	bool notify = check_condition(sensor->condition,
-				      sensor->temp_value, value,
-				      sensor->ref_val);
-
-	/* Update temperature value * /
+#if 0
+	/* Update temperature value */
 	sensor->temp_value = value;
 
-	/* Trigger notification if conditions are met * /
+	/* Trigger notification if conditions are met */
 	if (notify) {
 		value = sys_cpu_to_le16(sensor->temp_value);
 
 		bt_gatt_notify(conn, chrc, &value, sizeof(value));
-	}*/
+	}
+#endif
 }
 
 BT_GATT_SERVICE_DEFINE(hydrometer_svc,
 	BT_GATT_PRIMARY_SERVICE(&hydrometer_svc_uuid),
 
 	/* Control endpoint (clear settings/add calibration) */
-	BT_GATT_CHARACTERISTIC(BT_UUID_TEMPERATURE,
-			       BT_GATT_CHRC_WRITE,
-			       BT_GATT_PERM_WRITE,
-			       read_u16, NULL, 
-NULL),
-//&sensor_1.temp_value),
+	BT_GATT_CHARACTERISTIC(&hydrometer_control_char_uuid.uuid, BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_WRITE, NULL, write_hyrdrometer_control, NULL),
 
 	/* Get reading */
-	BT_GATT_CHARACTERISTIC(BT_UUID_TEMPERATURE,
+	BT_GATT_CHARACTERISTIC(&hydrometer_reading_char_uuid.uuid,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_READ,
 			       read_u16, NULL, 
