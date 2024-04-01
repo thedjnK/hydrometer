@@ -17,8 +17,8 @@ static double kalman_angle_pitch = 0;
 static double kalman_uncertainty_angle_pitch = 2 * 2;
 
 static void kalman_1d(double *kalman_state, double *kalman_uncertainty, double kalman_input, double kalman_measurement) {
-	*kalman_state = *kalman_state + 0.04 * kalman_input;
-	*kalman_uncertainty = *kalman_uncertainty + 0.04 * 0.04 * 4 * 4;
+	*kalman_state = *kalman_state + 0.2 * kalman_input;
+	*kalman_uncertainty = *kalman_uncertainty + 0.2 * 0.2 * 4 * 4;
 	double kalman_gain = *kalman_uncertainty * 1 / (1 * *kalman_uncertainty + 3 * 3);
 	*kalman_state = *kalman_state + kalman_gain * (kalman_measurement - *kalman_state);
 	*kalman_uncertainty = (1 - kalman_gain) * *kalman_uncertainty;
@@ -34,4 +34,6 @@ void calculate_angle(const double *acceleration, const double *gyroscope, bool f
 
 	*roll = kalman_angle_roll;
 	*pitch = kalman_angle_pitch;
+
+//      LOG_ERR("Got: %f, %f : %f, %f", angle_roll, angle_pitch, kalman_angle_roll, kalman_angle_pitch);
 }
