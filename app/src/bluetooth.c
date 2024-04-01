@@ -4,65 +4,33 @@
  * All right reserved. This code is not apache or FOSS/copyleft licensed.
  */
 
-//#include <stdbool.h>
 #include <zephyr/types.h>
-//#include <stddef.h>
-//#include <string.h>
 #include <errno.h>
-//#include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
-
+#include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/bluetooth.h>
-//#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/services/bas.h>
-#include <zephyr/logging/log.h>
-
+//#include <zephyr/bluetooth/services/bas.h>
 #include "bluetooth.h"
 
 LOG_MODULE_DECLARE(app);
 
 #define HYDROMETER_SVC_UUID BT_UUID_128_ENCODE(0x6565432a, 0xafc0, 0x4812, 0xbb2a, 0x22532a48b000)
+#define CONTROL_CHAR_UUID BT_UUID_128_ENCODE(0x6565432a, 0xafc0, 0x4812, 0xbb2a, 0x22532a48b001)
+#define TEMPERATURE_CHAR_UUID BT_UUID_128_ENCODE(0x6565432a, 0xafc0, 0x4812, 0xbb2a, 0x22532a48b002)
+#define ROLL_CHAR_UUID BT_UUID_128_ENCODE(0x6565432a, 0xafc0, 0x4812, 0xbb2a, 0x22532a48b003)
+#define PITCH_CHAR_UUID BT_UUID_128_ENCODE(0x6565432a, 0xafc0, 0x4812, 0xbb2a, 0x22532a48b004)
 
 static const struct bt_uuid_128 hydrometer_svc_uuid = BT_UUID_INIT_128(HYDROMETER_SVC_UUID);
-
-static const struct bt_uuid_128 hydrometer_control_char_uuid = BT_UUID_INIT_128(
-        0x65, 0x65, 0x43, 0x2a, 0xaf, 0xc0, 0x48, 0x12,
-	0xbb, 0x2a, 0x22, 0x53, 0x2a, 0x48, 0xb0, 0x01);
-
-static const struct bt_uuid_128 temperature_reading_char_uuid = BT_UUID_INIT_128(
-        0x65, 0x65, 0x43, 0x2a, 0xaf, 0xc0, 0x48, 0x12,
-	0xbb, 0x2a, 0x22, 0x53, 0x2a, 0x48, 0xb0, 0x02);
-
-static const struct bt_uuid_128 roll_reading_char_uuid = BT_UUID_INIT_128(
-        0x65, 0x65, 0x43, 0x2a, 0xaf, 0xc0, 0x48, 0x12,
-	0xbb, 0x2a, 0x22, 0x53, 0x2a, 0x48, 0xb0, 0x03);
-
-static const struct bt_uuid_128 pitch_reading_char_uuid = BT_UUID_INIT_128(
-        0x65, 0x65, 0x43, 0x2a, 0xaf, 0xc0, 0x48, 0x12,
-	0xbb, 0x2a, 0x22, 0x53, 0x2a, 0x48, 0xb0, 0x04);
+static const struct bt_uuid_128 hydrometer_control_char_uuid = BT_UUID_INIT_128(CONTROL_CHAR_UUID);
+static const struct bt_uuid_128 temperature_reading_char_uuid = BT_UUID_INIT_128(TEMPERATURE_CHAR_UUID);
+static const struct bt_uuid_128 roll_reading_char_uuid = BT_UUID_INIT_128(ROLL_CHAR_UUID);
+static const struct bt_uuid_128 pitch_reading_char_uuid = BT_UUID_INIT_128(PITCH_CHAR_UUID);
 
 static void bluetooth_advertise(void);
-
-static ssize_t write_hyrdrometer_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-					 const void *buf, uint16_t len, uint16_t offset,
-					 uint8_t flags)
-{
-	return 0;
-}
-
-static ssize_t read_sensor(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-			void *buf, uint16_t len, uint16_t offset)
-{
-	const double *value = (const double *)attr->user_data;
-//	uint16_t value = sys_cpu_to_le16(*u16);
-
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-				 sizeof(double));
-}
 
 struct hydrometer_sensor_data {
 	double temperature;
@@ -78,22 +46,20 @@ static void sensor_cccd_changed(const struct bt_gatt_attr *attr,
 //	simulate_temp = value == BT_GATT_CCC_NOTIFY;
 }
 
-static ssize_t read_es_measurement(struct bt_conn *conn,
-				   const struct bt_gatt_attr *attr, void *buf,
-				   uint16_t len, uint16_t offset)
+static ssize_t write_hyrdrometer_control(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					 const void *buf, uint16_t len, uint16_t offset,
+					 uint8_t flags)
 {
-/*
-	rsp.flags = sys_cpu_to_le16(value->flags);
-	rsp.sampling_function = value->sampling_func;
-	sys_put_le24(value->meas_period, rsp.measurement_period);
-	sys_put_le24(value->update_interval, rsp.update_interval);
-	rsp.application = value->application;
-	rsp.measurement_uncertainty = value->meas_uncertainty;
-*/
+	return 0;
+}
 
-//	return bt_gatt_attr_read(conn, attr, buf, len, offset, &rsp,
-//				 sizeof(rsp));
-return 0;
+static ssize_t read_sensor(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
+			   uint16_t len, uint16_t offset)
+{
+	const double *value = (const double *)attr->user_data;
+	uint64_t send_value = sys_cpu_to_le64(*(uint64_t *)value);
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &send_value, sizeof(send_value));
 }
 
 static void update_temperature(struct bt_conn *conn,
@@ -212,14 +178,6 @@ int setup_bluetooth(void)
 sensor_data.temperature = 123.456;
 sensor_data.roll = 0.1;
 sensor_data.pitch = 5.5;
-
-
-//	while (1) {
-//		k_sleep(K_SECONDS(1));
-//
-//		/* Battery level simulation */
-//		bas_notify();
-//	}
 
 	return 0;
 }
