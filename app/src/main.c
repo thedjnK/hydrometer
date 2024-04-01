@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 #include "filter.h"
+#include "bluetooth.h"
 
 LOG_MODULE_REGISTER(app, CONFIG_APPLICATION_LOG_LEVEL);
 
@@ -91,6 +92,8 @@ static int sensor_reading(const struct device *dev, double *temperature, double 
 int main(void)
 {
 	const struct device *const mpu6500 = DEVICE_DT_GET_ONE(invensense_mpu6050);
+
+	setup_bluetooth();
 
 	if (!device_is_ready(mpu6500)) {
 		LOG_ERR("Device init failed: %s", mpu6500->name);
